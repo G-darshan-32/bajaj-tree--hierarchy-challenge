@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>BFHL — Node Hierarchy Explorer</title>
+<title>Node Hierarchy Explorer</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
   :root {
-    --bg: #0a0a0f;
-    --surface: #111118;
-    --border: #1e1e2e;
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --border: #2a2d3e;
     --accent: #7c6af7;
     --accent2: #f76a8a;
     --accent3: #6af7c8;
@@ -51,7 +51,7 @@
     padding: 2rem 1.5rem 4rem;
   }
 
-  /* Header */
+  
   header {
     display: flex;
     align-items: flex-end;
@@ -72,7 +72,7 @@
   header h1 { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px; line-height: 1; }
   header p { font-size: 0.78rem; color: var(--muted); margin-top: 4px; font-family: var(--mono); }
 
-  /* Input area */
+  
   .input-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -130,7 +130,7 @@
   .api-input:focus { border-color: var(--accent); }
 
   .btn {
-    background: linear-gradient(135deg, var(--accent), #9b6af7);
+    background: linear-gradient(135deg, var(--accent), #6f44be);
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -184,14 +184,14 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* Result sections */
+  
   .results { display: none; animation: fadeUp 0.4s ease; }
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(16px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* Identity bar */
+  
   .identity-bar {
     display: flex;
     gap: 1rem;
@@ -212,7 +212,7 @@
     font-size: 0.88rem; font-weight: 600; color: var(--accent3);
   }
 
-  /* Summary */
+ 
   .summary-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -257,7 +257,7 @@
     background: var(--border);
   }
 
-  /* Hierarchy cards */
+  
   .hier-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -333,7 +333,7 @@
     padding: 3px 8px;
   }
 
-  /* Tags (invalid/duplicate) */
+  
   .tags-wrap {
     display: flex; flex-wrap: wrap; gap: 0.5rem;
   }
@@ -345,7 +345,7 @@
   .tag.dup { background: rgba(247,186,106,0.08); color: #f7c56a; border: 1px solid rgba(247,186,106,0.2); }
   .tag.empty { color: var(--muted); font-family: var(--mono); font-size: 0.8rem; }
 
-  /* Raw JSON toggle */
+
   .json-toggle { background: none; border: none; color: var(--muted); font-family: var(--mono); font-size: 0.72rem; cursor: pointer; text-decoration: underline; padding: 0; }
   .json-toggle:hover { color: var(--text); }
   .json-block {
@@ -376,7 +376,7 @@
     <div class="logo-block">B</div>
     <div>
       <h1>BFHL Node Explorer</h1>
-      <p>SRM Full Stack Challenge — Hierarchy Visualizer</p>
+      <p>Hierarchy Visualizer</p>
     </div>
   </header>
 

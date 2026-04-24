@@ -22,22 +22,22 @@ function parseData(data) {
   for (let raw of data) {
     const entry = typeof raw === "string" ? raw.trim() : String(raw).trim();
 
-    // Validate format
+    
     if (!VALID_EDGE.test(entry)) {
       invalid_entries.push(raw); // push original
       continue;
     }
 
-    const [parent, child] = entry.split("->"); // both single uppercase letters here
+    const [parent, child] = entry.split("->"); 
 
-    // Self-loop check (already caught by regex since A->A would match, but spec says invalid)
+    
     if (parent === child) {
       invalid_entries.push(raw);
       continue;
     }
 
     if (seenEdges.has(entry)) {
-      // Only add to duplicate_edges once no matter how many times it repeats
+      
       if (!duplicate_edges.includes(entry)) duplicate_edges.push(entry);
       continue;
     }
@@ -50,37 +50,35 @@ function parseData(data) {
 }
 
 function buildHierarchies(validEdges) {
-  // --- Step 1: Apply diamond / multi-parent rule (first-encountered parent wins) ---
-  const childParentMap = new Map(); // child -> parent (first encounter wins)
-  const adjacency = new Map();      // parent -> [children]
+  
+  const childParentMap = new Map(); 
+  const adjacency = new Map();      
 
   for (const { parent, child } of validEdges) {
-    if (childParentMap.has(child)) continue; // already has a parent, discard
+    if (childParentMap.has(child)) continue; 
     childParentMap.set(child, parent);
 
     if (!adjacency.has(parent)) adjacency.set(parent, []);
     adjacency.get(parent).push(child);
   }
 
-  // --- Step 2: Collect all nodes ---
+
   const allNodes = new Set();
   for (const { parent, child } of validEdges) {
     allNodes.add(parent);
     allNodes.add(child);
   }
 
-  // --- Step 3: Find roots (nodes that are never a child in the accepted edges) ---
+  
   const acceptedChildren = new Set(childParentMap.keys());
   const roots = [];
   for (const node of allNodes) {
     if (!acceptedChildren.has(node)) roots.push(node);
   }
 
-  // --- Step 4: Group nodes by connected component (undirected) ---
   const visited = new Set();
   const components = [];
 
-  // Build undirected adjacency for grouping
   const undirected = new Map();
   for (const node of allNodes) undirected.set(node, new Set());
   for (const [parent, children] of adjacency) {
@@ -112,7 +110,7 @@ function buildHierarchies(validEdges) {
     }
   }
 
-  // --- Step 5: For each component, detect cycle and build tree ---
+ 
   function hasCycle(compNodes) {
     // DFS cycle detection on directed graph
     const WHITE = 0, GRAY = 1, BLACK = 2;
@@ -161,11 +159,11 @@ function buildHierarchies(validEdges) {
     const cyclic = hasCycle(comp);
 
     if (cyclic) {
-      // Pure cycle: use lex smallest node as root
+     
       const cycleRoot = [...comp].sort()[0];
       hierarchies.push({ root: cycleRoot, tree: {}, has_cycle: true });
     } else {
-      // May have multiple roots in same component (shouldn't normally, but handle gracefully)
+      
       const rootsInComp = compRoots.length ? compRoots : [[...comp].sort()[0]];
       for (const r of rootsInComp) {
         const tree = {};
