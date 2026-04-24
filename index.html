@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BFHL — Node Hierarchy Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: #1e1e2e;
+    --accent: #7c6af7;
+    --accent2: #f76a8a;
+    --accent3: #6af7c8;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --tree-line: #2a2a3e;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,106,247,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,106,247,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: flex-end;
+    gap: 1.2rem;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-block {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; font-weight: 800; color: #fff;
+    letter-spacing: -1px;
+    flex-shrink: 0;
+  }
+  header h1 { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px; line-height: 1; }
+  header p { font-size: 0.78rem; color: var(--muted); margin-top: 4px; font-family: var(--mono); }
+
+  /* Input area */
+  .input-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .input-card label {
+    display: block;
+    font-size: 0.72rem;
+    font-family: var(--mono);
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 0.7rem;
+  }
+  textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.88rem;
+    line-height: 1.7;
+    padding: 1rem;
+    resize: vertical;
+    min-height: 130px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--muted); }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+  .api-input {
+    flex: 1;
+    min-width: 180px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    padding: 0.55rem 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .api-input:focus { border-color: var(--accent); }
+
+  .btn {
+    background: linear-gradient(135deg, var(--accent), #9b6af7);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1.5rem;
+    font-family: var(--sans);
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    transition: opacity 0.2s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .btn:hover { opacity: 0.88; }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-demo {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    padding: 0.55rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-demo:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Error */
+  .error-box {
+    background: rgba(247,106,138,0.1);
+    border: 1px solid rgba(247,106,138,0.3);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    color: var(--accent2);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    margin-bottom: 1.5rem;
+    display: none;
+  }
+
+  /* Spinner */
+  .spinner {
+    display: none;
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Result sections */
+  .results { display: none; animation: fadeUp 0.4s ease; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Identity bar */
+  .identity-bar {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+  }
+  .id-pill {
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .id-pill span:first-child {
+    font-size: 0.65rem; font-family: var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px;
+  }
+  .id-pill span:last-child {
+    font-size: 0.88rem; font-weight: 600; color: var(--accent3);
+  }
+
+  /* Summary */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem 1.2rem;
+    text-align: center;
+  }
+  .stat-card .num {
+    font-size: 2.2rem; font-weight: 800; line-height: 1;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .stat-card .label {
+    font-size: 0.68rem; font-family: var(--mono); color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1.5px; margin-top: 5px;
+  }
+
+  /* Section heading */
+  .sec-heading {
+    font-size: 0.68rem;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin: 1.5rem 0 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .sec-heading::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Hierarchy cards */
+  .hier-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+  }
+  .hier-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hier-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .hier-card.cycle::before { background: linear-gradient(90deg, var(--accent2), #f7a06a); }
+
+  .hier-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+  .root-label {
+    font-size: 0.65rem; font-family: var(--mono); color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1.5px;
+  }
+  .root-node {
+    font-size: 2rem; font-weight: 800; color: var(--text); line-height: 1;
+    margin-top: 2px;
+  }
+  .badge {
+    font-size: 0.65rem; font-family: var(--mono); font-weight: 500;
+    padding: 3px 8px; border-radius: 99px;
+    background: rgba(124,106,247,0.15); color: var(--accent);
+    border: 1px solid rgba(124,106,247,0.25);
+  }
+  .badge.cycle-badge {
+    background: rgba(247,106,138,0.12); color: var(--accent2);
+    border-color: rgba(247,106,138,0.25);
+  }
+
+  /* Tree rendering */
+  .tree-view {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    line-height: 1.8;
+    color: var(--text);
+  }
+  .tree-view .node {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tree-view .node-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent3);
+    flex-shrink: 0;
+  }
+  .tree-view .children { padding-left: 18px; border-left: 1px dashed var(--tree-line); margin-left: 3px; }
+  .cycle-msg { color: var(--accent2); font-family: var(--mono); font-size: 0.78rem; display: flex; align-items: center; gap: 6px; }
+  .depth-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 0.68rem; font-family: var(--mono); color: var(--accent3);
+    margin-top: 0.8rem;
+    background: rgba(106,247,200,0.08);
+    border: 1px solid rgba(106,247,200,0.15);
+    border-radius: 6px;
+    padding: 3px 8px;
+  }
+
+  /* Tags (invalid/duplicate) */
+  .tags-wrap {
+    display: flex; flex-wrap: wrap; gap: 0.5rem;
+  }
+  .tag {
+    font-family: var(--mono); font-size: 0.78rem;
+    padding: 4px 10px; border-radius: 6px;
+  }
+  .tag.invalid { background: rgba(247,106,138,0.1); color: var(--accent2); border: 1px solid rgba(247,106,138,0.2); }
+  .tag.dup { background: rgba(247,186,106,0.08); color: #f7c56a; border: 1px solid rgba(247,186,106,0.2); }
+  .tag.empty { color: var(--muted); font-family: var(--mono); font-size: 0.8rem; }
+
+  /* Raw JSON toggle */
+  .json-toggle { background: none; border: none; color: var(--muted); font-family: var(--mono); font-size: 0.72rem; cursor: pointer; text-decoration: underline; padding: 0; }
+  .json-toggle:hover { color: var(--text); }
+  .json-block {
+    display: none;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    line-height: 1.7;
+    color: var(--text);
+    overflow-x: auto;
+    margin-top: 0.8rem;
+    white-space: pre;
+  }
+
+  @media (max-width: 560px) {
+    .summary-grid { grid-template-columns: repeat(3, 1fr); }
+    .stat-card .num { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo-block">B</div>
+    <div>
+      <h1>BFHL Node Explorer</h1>
+      <p>SRM Full Stack Challenge — Hierarchy Visualizer</p>
+    </div>
+  </header>
+
+  <div class="input-card">
+    <label>Node Edges (comma or newline separated)</label>
+    <textarea id="edgesInput" placeholder='e.g.  A->B, A->C, B->D, X->Y, Y->Z, Z->X, hello, 1->2'></textarea>
+    <div class="controls">
+      <input class="api-input" id="apiUrl" type="text" placeholder="API URL  e.g. https://bfhl-api.onrender.com" value="https://bfhl-api.onrender.com"/>
+      <button class="btn-demo" onclick="loadDemo()">Load Demo</button>
+      <div class="spinner" id="spinner"></div>
+      <button class="btn" id="submitBtn" onclick="submitData()">Analyze →</button>
+    </div>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <div class="results" id="results">
+
+    <!-- Identity -->
+    <div class="identity-bar" id="identityBar"></div>
+
+    <!-- Summary stats -->
+    <div class="sec-heading">Summary</div>
+    <div class="summary-grid" id="summaryGrid"></div>
+
+    <!-- Hierarchies -->
+    <div class="sec-heading">Hierarchies</div>
+    <div class="hier-grid" id="hierGrid"></div>
+
+    <!-- Invalid -->
+    <div class="sec-heading">Invalid Entries</div>
+    <div id="invalidWrap" class="tags-wrap"></div>
+
+    <!-- Duplicates -->
+    <div class="sec-heading">Duplicate Edges</div>
+    <div id="dupWrap" class="tags-wrap"></div>
+
+    <!-- Raw JSON -->
+    <div class="sec-heading" style="margin-top:2rem;">
+      Raw Response &nbsp;<button class="json-toggle" onclick="toggleJson()">show / hide</button>
+    </div>
+    <div class="json-block" id="jsonBlock"></div>
+
+  </div>
+
+</div>
+
+<script>
+const DEMO = [
+  "A->B","A->C","B->D","C->E","E->F",
+  "X->Y","Y->Z","Z->X",
+  "P->Q","Q->R",
+  "G->H","G->H","G->I",
+  "hello","1->2","A->"
+];
+
+function loadDemo() {
+  document.getElementById('edgesInput').value = DEMO.join(', ');
+}
+
+function toggleJson() {
+  const el = document.getElementById('jsonBlock');
+  el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorBox');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+  document.getElementById('results').style.display = 'none';
+}
+
+function clearError() {
+  document.getElementById('errorBox').style.display = 'none';
+}
+
+async function submitData() {
+  clearError();
+  const raw = document.getElementById('edgesInput').value.trim();
+  if (!raw) { showError("Please enter at least one edge."); return; }
+
+  // Parse comma or newline separated
+  const data = raw.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+
+  const baseUrl = document.getElementById('apiUrl').value.trim().replace(/\/$/, '');
+  const btn = document.getElementById('submitBtn');
+  const spinner = document.getElementById('spinner');
+
+  btn.disabled = true;
+  spinner.style.display = 'inline-block';
+
+  try {
+    const res = await fetch(baseUrl + '/bfhl', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    const json = await res.json();
+    renderResults(json);
+  } catch (err) {
+    showError("API call failed — " + err.message + ". Is the API running and CORS enabled?");
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+  }
+}
+
+function renderResults(r) {
+  // Identity
+  document.getElementById('identityBar').innerHTML = [
+    ['User ID',     r.user_id],
+    ['Email',       r.email_id],
+    ['Roll Number', r.college_roll_number],
+  ].map(([k, v]) => `
+    <div class="id-pill">
+      <span>${k}</span>
+      <span>${esc(v)}</span>
+    </div>
+  `).join('');
+
+  // Summary
+  const s = r.summary || {};
+  document.getElementById('summaryGrid').innerHTML = `
+    <div class="stat-card"><div class="num">${s.total_trees ?? 0}</div><div class="label">Valid Trees</div></div>
+    <div class="stat-card"><div class="num">${s.total_cycles ?? 0}</div><div class="label">Cyclic Groups</div></div>
+    <div class="stat-card"><div class="num">${esc(s.largest_tree_root || '—')}</div><div class="label">Deepest Root</div></div>
+  `;
+
+  // Hierarchies
+  const hierGrid = document.getElementById('hierGrid');
+  hierGrid.innerHTML = '';
+  (r.hierarchies || []).forEach(h => {
+    const card = document.createElement('div');
+    card.className = 'hier-card' + (h.has_cycle ? ' cycle' : '');
+
+    const treeHtml = h.has_cycle
+      ? `<div class="cycle-msg">↺ Cyclic — no tree structure</div>`
+      : renderTree(h.tree);
+
+    const depthHtml = h.depth != null
+      ? `<div class="depth-chip">↕ depth: ${h.depth}</div>` : '';
+
+    card.innerHTML = `
+      <div class="hier-header">
+        <div>
+          <div class="root-label">Root</div>
+          <div class="root-node">${esc(h.root)}</div>
+        </div>
+        <span class="badge ${h.has_cycle ? 'cycle-badge' : ''}">${h.has_cycle ? 'Cycle' : 'Tree'}</span>
+      </div>
+      <div class="tree-view">${treeHtml}</div>
+      ${depthHtml}
+    `;
+    hierGrid.appendChild(card);
+  });
+
+  // Invalid
+  const inv = r.invalid_entries || [];
+  document.getElementById('invalidWrap').innerHTML = inv.length
+    ? inv.map(e => `<span class="tag invalid">${esc(e) || '""'}</span>`).join('')
+    : `<span class="tag empty">None</span>`;
+
+  // Duplicates
+  const dup = r.duplicate_edges || [];
+  document.getElementById('dupWrap').innerHTML = dup.length
+    ? dup.map(e => `<span class="tag dup">${esc(e)}</span>`).join('')
+    : `<span class="tag empty">None</span>`;
+
+  // Raw JSON
+  document.getElementById('jsonBlock').textContent = JSON.stringify(r, null, 2);
+
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderTree(obj) {
+  if (!obj || typeof obj !== 'object') return '';
+  const keys = Object.keys(obj);
+  if (!keys.length) return '<span style="color:var(--muted)">leaf</span>';
+  return keys.map(k => `
+    <div class="node"><div class="node-dot"></div><strong>${esc(k)}</strong></div>
+    ${Object.keys(obj[k]).length ? `<div class="children">${renderTree(obj[k])}</div>` : ''}
+  `).join('');
+}
+
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
